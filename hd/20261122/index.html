@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="wolf-theme">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>疯狼星期四 - 小小会玩-会玩活动</title>
+  <link rel="icon" href="../../assets/logo.jpg" type="image/jpeg" />
+  <link rel="stylesheet" href="../../css/common.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div id="app">
+    <site-layout>
+      <div class="wolf-page">
+        <section class="wolf-hero">
+          <img class="wolf-hero__img" src="image/狼人杀.png" alt="疯狼星期四 · 2026冬季赛" />
+        </section>
+
+        <div class="container wolf-body">
+          <!-- 时间轴 -->
+          <section class="wolf-timeline">
+            <div class="wolf-timeline__track">
+              <div class="wolf-timeline__line">
+                <i class="wolf-timeline__progress" :style="{ width: progressWidth }"></i>
+              </div>
+              <button
+                v-for="(item, index) in stages"
+                :key="index"
+                class="wolf-timeline__item"
+                :class="{
+                  'is-active': item.status === 'active',
+                  'is-done': item.status === 'done',
+                  'is-pending': item.status === 'pending',
+                  'is-selected': currentStage && currentStage.name === item.name,
+                }"
+                type="button"
+                @click="onStageClick(item)"
+              >
+                <span class="wolf-timeline__dot"></span>
+                <strong class="wolf-timeline__name">{{ item.name }}</strong>
+                <span class="wolf-timeline__time">{{ item.time }}</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- 报名投票面板 -->
+          <section class="vote-panel" v-if="isVoteStage">
+            <div class="vote-panel__border">
+              <div class="vote-top">
+                <div class="vote-ticket">
+                  <span class="vote-ticket__label">今日免费票</span>
+                  <strong class="vote-ticket__num">
+                    {{ voteUsed }}<span>/{{ voteTotal }}</span>
+                  </strong>
+                </div>
+                <p class="vote-rule">
+                  每人每日拥有100票，每次投票消耗10票，<br />
+                  可投给不同主播或战队；若想为主播/战队加票，<br />
+                  可消耗50金币，每50金币可投出20票。
+                </p>
+              </div>
+
+              <div class="vote-divider">
+                <i></i>
+                <span>获胜战队两位发起人均可获得</span>
+                <i></i>
+              </div>
+
+              <div class="reward-list">
+                <div class="reward-card" v-for="(reward, idx) in rewards" :key="idx">
+                  <div class="reward-card__icon" :class="'is-' + reward.icon" aria-hidden="true"></div>
+                  <div class="reward-card__body">
+                    <p class="reward-card__hi">{{ reward.hi }}</p>
+                    <p class="reward-card__name">{{ reward.name }}</p>
+                    <span class="reward-card__tag">{{ reward.tag }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="vote-foot">给获胜战队发起人投票的用户，可获得主播同款头套（永久）</p>
+          </section>
+
+          <!-- 主播报名榜：左红右蓝 -->
+          <section class="rank-board" v-if="isVoteStage">
+            <div class="rank-board__hero">
+              <span class="rank-board__side is-red-label">RED</span>
+              <div class="rank-board__titles">
+                <h3 class="rank-board__title">主播报名榜</h3>
+                <p class="rank-board__desc">点击查看对应爱播的抖音号/专属福利码</p>
+              </div>
+              <span class="rank-board__side is-blue-label">BLUE</span>
+            </div>
+
+            <div class="rank-board__arena">
+              <div class="rank-board__cols">
+                <div class="rank-col is-red">
+                  <div class="rank-col__head"><i></i><span>红队·报名主播</span><i></i></div>
+                  <div class="rank-card" v-for="(item, index) in redTeam" :key="'r' + index"
+                    :class="{ 'is-top': index < 2 }">
+                    <span class="rank-card__no">{{ String(index + 1).padStart(2, '0') }}</span>
+                    <p class="rank-card__name">{{ item.name }}</p>
+                    <div class="rank-card__actions">
+                      <button class="rank-btn is-ghost" type="button" @click="openInfo(item, 'douyin', 'red')">抖音号</button>
+                      <button class="rank-btn is-solid" type="button" @click="openInfo(item, 'code', 'red')">福利码</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="rank-col is-blue">
+                  <div class="rank-col__head"><i></i><span>蓝队·报名主播</span><i></i></div>
+                  <div class="rank-card" v-for="(item, index) in blueTeam" :key="'b' + index"
+                    :class="{ 'is-top': index < 2 }">
+                    <span class="rank-card__no">{{ String(index + 1).padStart(2, '0') }}</span>
+                    <p class="rank-card__name">{{ item.name }}</p>
+                    <div class="rank-card__actions">
+                      <button class="rank-btn is-ghost" type="button" @click="openInfo(item, 'douyin', 'blue')">抖音号</button>
+                      <button class="rank-btn is-solid" type="button" @click="openInfo(item, 'code', 'blue')">福利码</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 其他阶段：即将开启占位 -->
+          <section class="stage-wait" v-else-if="currentStage">
+            <div class="stage-wait__card">
+              <p class="stage-wait__badge">{{ currentStage.name }}</p>
+              <h3 class="stage-wait__title">即将开启</h3>
+              <p class="stage-wait__desc">请耐心等待</p>
+              <p class="stage-wait__time" v-if="currentStage.time">{{ currentStage.time.replace('\n', ' ') }}</p>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+      <!-- 抖音号 / 福利码弹窗：提到布局外，避免点击被挡住 -->
+      <teleport to="body">
+        <div
+          v-if="infoDialog.open"
+          class="info-mask is-visible"
+          @click.self="closeInfo"
+        >
+          <div class="info-dialog" :class="'is-' + infoDialog.team" role="dialog" aria-modal="true">
+            <button class="info-dialog__x" type="button" aria-label="关闭" @click.stop="closeInfo">×</button>
+            <p class="info-dialog__label">{{ infoDialog.typeLabel }}</p>
+            <h3 class="info-dialog__name">{{ infoDialog.name }}</h3>
+            <div class="info-dialog__value">{{ infoDialog.value || '暂未填写' }}</div>
+            <button
+              class="info-dialog__copy"
+              type="button"
+              :disabled="!infoDialog.value"
+              @click.stop="copyInfo"
+            >复制{{ infoDialog.typeLabel }}</button>
+          </div>
+        </div>
+      </teleport>
+    </site-layout>
+  </div>
+
+  <script src="../../js/vue3.min.js"></script>
+  <script src="../../js/toast.js"></script>
+  <script src="../../js/site-config.js"></script>
+  <script src="../../js/layout.js"></script>
+  <script src="teams-config.js"></script>
+  <script>
+    function parseStageTime(value) {
+      const date = new Date(String(value).replace(/-/g, "/"));
+      return Number.isNaN(date.getTime()) ? null : date.getTime();
+    }
+
+    function getStageStatus(item, now) {
+      const start = parseStageTime(item.start);
+      const end = parseStageTime(item.end);
+      if (start == null || end == null) return "pending";
+      if (now < start) return "pending";
+      if (now >= end) return "done";
+      return "active";
+    }
+
+    const STAGE_LIST = [
+      {
+        name: "报名投票",
+        time: "11.19 12:00\n- 11.26 12:00",
+        start: "2026-11-19 12:00",
+        end: "2026-11-26 12:00",
+      },
+      {
+        name: "序幕拉开",
+        time: "11.26 12:00\n- 12.3 00:00",
+        start: "2026-11-26 12:00",
+        end: "2026-12-03 00:00",
+      },
+      {
+        name: "宿命对决",
+        time: "12.3 00:00\n- 12.10 00:00",
+        start: "2026-12-03 00:00",
+        end: "2026-12-10 00:00",
+      },
+      {
+        name: "局势反转",
+        time: "12.10 00:00\n- 12.17 00:00",
+        start: "2026-12-10 00:00",
+        end: "2026-12-17 00:00",
+      },
+      {
+        name: "终夜加冕",
+        time: "12.17 00:00\n- 12.24 00:00",
+        start: "2026-12-17 00:00",
+        end: "2026-12-24 00:00",
+      },
+    ];
+
+    createSiteApp({
+      data() {
+        return {
+          stages: [],
+          selectedStage: null,
+          voteUsed: 100,
+          voteTotal: 100,
+          rewards: [
+            { icon: "hat", hi: "定制1款", name: "主播专属头套", tag: "永久拥有" },
+            { icon: "chat", hi: "任选1款", name: "疯狂狼人发言背景", tag: "永久拥有" },
+          ],
+          // 名单配置见同目录 teams-config.js
+          redTeam: (window.WOLF_TEAMS_CONFIG && window.WOLF_TEAMS_CONFIG.redTeam) || [],
+          blueTeam: (window.WOLF_TEAMS_CONFIG && window.WOLF_TEAMS_CONFIG.blueTeam) || [],
+          infoDialog: {
+            open: false,
+            team: "red",
+            name: "",
+            type: "douyin",
+            typeLabel: "抖音号",
+            value: "",
+          },
+          _timer: null,
+        };
+      },
+      computed: {
+        currentStage() {
+          if (this.selectedStage) {
+            const latest = this.stages.find((s) => s.name === this.selectedStage.name);
+            return latest || this.selectedStage;
+          }
+          return this.stages.find((s) => s.status === "active") || this.stages[0] || null;
+        },
+        isVoteStage() {
+          return !!(this.currentStage && this.currentStage.name === "报名投票");
+        },
+        progressWidth() {
+          if (!this.stages.length) return "0%";
+          const activeIndex = this.stages.findIndex((s) => s.status === "active");
+          const doneCount = this.stages.filter((s) => s.status === "done").length;
+          let ratio = 0;
+          if (activeIndex >= 0) {
+            ratio = activeIndex / Math.max(this.stages.length - 1, 1);
+          } else if (doneCount > 0) {
+            ratio = doneCount / Math.max(this.stages.length - 1, 1);
+            if (doneCount >= this.stages.length) ratio = 1;
+          }
+          return Math.max(0, Math.min(100, ratio * 100)) + "%";
+        },
+      },
+      methods: {
+        refreshStages() {
+          const now = Date.now();
+          this.stages = STAGE_LIST.map((item) => ({
+            ...item,
+            status: getStageStatus(item, now),
+          }));
+        },
+        onStageClick(item) {
+          // 任意阶段都可切换查看内容
+          this.selectedStage = item;
+          // 已结束：只弹提示，不拦截查看
+          if (item.status === "done") {
+            this.$toast.show(item.name + "：已结束");
+            return;
+          }
+          // 未开启：只弹提示，不拦截查看
+          if (item.status === "pending") {
+            this.$toast.show(item.name + "：未开启");
+          }
+        },
+        openInfo(item, type, team) {
+          const isDouyin = type === "douyin";
+          this.infoDialog = {
+            open: true,
+            team: team || "red",
+            name: item.name || "",
+            type: type,
+            typeLabel: isDouyin ? "抖音号" : "福利码",
+            value: isDouyin ? (item.douyin || "") : (item.code || ""),
+          };
+          document.body.style.overflow = "hidden";
+        },
+        closeInfo() {
+          this.infoDialog = {
+            ...this.infoDialog,
+            open: false,
+          };
+          document.body.style.overflow = "";
+        },
+        async copyInfo() {
+          const text = this.infoDialog.value;
+          if (!text) {
+            this.$toast.show("暂无可复制内容");
+            return;
+          }
+          try {
+            await navigator.clipboard.writeText(text);
+            this.$toast.success("已复制：" + text);
+          } catch (e) {
+            const input = document.createElement("input");
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand("copy");
+            document.body.removeChild(input);
+            this.$toast.success("已复制：" + text);
+          }
+        },
+      },
+      mounted() {
+        this.refreshStages();
+        this._timer = setInterval(() => this.refreshStages(), 60 * 1000);
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && this.infoDialog.open) this.closeInfo();
+        });
+      },
+      beforeUnmount() {
+        if (this._timer) clearInterval(this._timer);
+      },
+    }).mount("#app");
+  </script>
+</body>
+
+</html>

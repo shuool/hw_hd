@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="小小会玩-活动攻略，汇集各类活动页面与攻略指南" />
+  <title>小小会玩-会玩活动</title>
+  <link rel="icon" href="assets/logo.jpg" type="image/jpeg" />
+  <link rel="apple-touch-icon" href="assets/logo.jpg" />
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/preview.css" />
+</head>
+
+<body>
+  <div id="app">
+    <site-layout>
+      <div class="container">
+        <section class="preview-section">
+          <div class="search-bar">
+            <span class="search-bar__icon" aria-hidden="true">⌕</span>
+            <input class="search-bar__input" type="search" v-model.trim="keyword" placeholder="请输入搜索内容"
+              enterkeyhint="search" autocomplete="off" />
+            <button class="search-bar__clear" type="button" v-if="keyword" aria-label="清空"
+              @click="keyword = ''">×</button>
+          </div>
+
+          <p class="search-bar__hint" v-if="keyword">
+            找到 {{ filteredActivities.length }} 个结果
+          </p>
+
+          <div class="activity-list" v-if="filteredActivities.length">
+            <button v-for="(item, index) in filteredActivities" :key="item.id" class="activity-card"
+              :class="{ 'is-ended': ended(item), 'has-image': !!item.image }"
+              :style="{ animationDelay: (index * 0.06) + 's' }" type="button" @click="onActivityClick(item, $event)">
+              <div class="activity-card__cover">
+                <img v-if="item.image" class="activity-card__img" :src="item.image" :alt="item.title" loading="lazy" />
+                <div class="activity-card__shade"></div>
+              </div>
+
+              <div class="activity-card__badges">
+                <span class="activity-card__pin" v-if="item.pin">置顶</span>
+                <span class="activity-card__type" :class="typeMeta(item).className">
+                  {{ typeMeta(item).label }}
+                </span>
+                <span class="activity-card__ended-badge" v-if="ended(item)">已结束</span>
+                <span class="activity-card__long" v-else-if="item.longTerm">长期</span>
+              </div>
+
+              <div class="activity-card__content">
+                <h3 class="activity-card__title">{{ item.title }}</h3>
+                <p class="activity-card__desc" v-if="item.desc">{{ item.desc }}</p>
+                <div class="activity-card__footer">
+                  <span class="activity-card__time" v-if="item.longTerm">长期活动</span>
+                  <span class="activity-card__time" v-else-if="timeLabel(item)">{{ timeLabel(item) }}</span>
+                  <span class="activity-card__go">进入 ›</span>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <div class="empty-state" v-else>
+            <p class="empty-state__title">{{ keyword ? '没有找到相关活动' : '暂无活动' }}</p>
+            <p class="empty-state__desc">
+              {{ keyword ? '换个关键词试试吧' : '敬请期待，新活动上线后会显示在这里' }}
+            </p>
+          </div>
+        </section>
+      </div>
+
+      <div class="modal-mask" :class="{ 'is-visible': activityDialog.open }" @click.self="closeActivityDialog">
+        <div class="modal modal--activity" role="dialog" aria-modal="true">
+          <button class="modal__x" type="button" aria-label="关闭" @click="closeActivityDialog">
+            <span></span><span></span>
+          </button>
+          <h3 class="modal__title">{{ activityDialog.title }}</h3>
+          <div class="modal__html" v-html="activityDialog.content"></div>
+          <button class="modal__btn" type="button" @click="closeActivityDialog">知道了</button>
+        </div>
+      </div>
+    </site-layout>
+  </div>
+
+  <script src="js/vue3.min.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/site-config.js"></script>
+  <script src="js/layout.js"></script>
+  <script src="js/activities-config.js"></script>
+  <script src="js/preview.js"></script>
+</body>
+
+</html>

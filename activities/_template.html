@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>活动名称 - 小小会玩-会玩活动</title>
+  <link rel="icon" href="../assets/logo.jpg" type="image/jpeg" />
+  <link rel="stylesheet" href="../css/common.css" />
+  <!-- 按需引入本活动样式：<link rel="stylesheet" href="xxx.css" /> -->
+</head>
+
+<body>
+  <div id="app">
+    <!-- 头尾由 site-layout 统一提供，这里只写活动内容 -->
+    <site-layout>
+      <div class="container">
+        <h2>活动标题</h2>
+        <p>在这里写活动内容…</p>
+      </div>
+    </site-layout>
+  </div>
+
+  <script src="../js/vue3.min.js"></script>
+  <script src="../js/toast.js"></script>
+  <script src="../js/site-config.js"></script>
+  <script src="../js/layout.js"></script>
+  <script>
+    createSiteApp({
+      data() {
+        return {};
+      },
+    }).mount("#app");
+  </script>
+</body>
+
+</html>
